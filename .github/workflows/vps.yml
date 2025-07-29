@@ -1,0 +1,52 @@
+name: Persistent Terminal with Auto Bot
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'  # Run every 6 hours
+
+jobs:
+  terminal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+    - name: Install packages
+      run: |
+        sudo apt update
+        sudo apt install -y unzip openssh-server git python3-pip
+
+    - name: Download latest ngrok
+      run: |
+        wget -O ngrok.zip https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.zip
+        unzip ngrok.zip
+        sudo mv ngrok /usr/local/bin/ngrok
+        chmod +x /usr/local/bin/ngrok
+
+    - name: Start SSH and configure ngrok
+      run: |
+        echo "PermitRootLogin yes" | sudo tee -a /etc/ssh/sshd_config
+        echo "PasswordAuthentication yes" | sudo tee -a /etc/ssh/sshd_config
+        sudo service ssh start
+        echo "root:Score-x" | sudo chpasswd
+        ngrok config add-authtoken YOUR_NGROK_AUTH_TOKEN
+        nohup ngrok tcp 22 --region ap > /dev/null &
+
+    - name: Clone your bot repo
+      run: |
+        git clone https://github.com/Score-x/YOUR-REPO.git
+        cd YOUR-REPO
+        pip3 install -r requirements.txt || true  # optional: if you have requirements.txt
+
+    - name: Start your bot
+      run: |
+        cd YOUR-REPO
+        nohup python3 bot.py &  # change to your script name if different
+
+    - name: Show SSH Info
+      run: |
+        sleep 8
+        curl -s http://127.0.0.1:4040/api/tunnels | grep -o 'tcp://[^"]*'
+
+    - name: Keep alive
+      run: sleep 3400
