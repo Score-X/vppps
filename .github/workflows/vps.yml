@@ -1,52 +1,46 @@
-name: Persistent Terminal with Auto Bot
+name: Ubuntu Terminal
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 */6 * * *'  # Run every 6 hours
+  push:
+    branches:
+      - main
 
 jobs:
-  terminal:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 9999
 
     steps:
-    - name: Install packages
+    - name: Setup
       run: |
         sudo apt update
-        sudo apt install -y unzip openssh-server git python3-pip
+        sudo apt install unzip openssh-server -y
 
     - name: Download latest ngrok
       run: |
         wget -O ngrok.zip https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.zip
         unzip ngrok.zip
-        sudo mv ngrok /usr/local/bin/ngrok
+        sudo mv ngrok /usr/local/bin
         chmod +x /usr/local/bin/ngrok
 
     - name: Start SSH and configure ngrok
       run: |
         echo "PermitRootLogin yes" | sudo tee -a /etc/ssh/sshd_config
         echo "PasswordAuthentication yes" | sudo tee -a /etc/ssh/sshd_config
+        echo "PermitEmptyPasswords no" | sudo tee -a /etc/ssh/sshd_config
         sudo service ssh start
-        echo "root:Score-x" | sudo chpasswd
-        ngrok config add-authtoken 2qiXwqE9lFYqe9NvvpTGZTj7F5h_2Wquuw8qRBApdFBQox56J
-        nohup ngrok tcp 22 --region ap > /dev/null &
 
-    - name: Clone your bot repo
-      run: |
-        git clone https://github.com/Score-x/YOUR-REPO.git
-        cd YOUR-REPO
-        pip3 install -r requirements.txt || true  # optional: if you have requirements.txt
+        echo -e "root:Score-x" | sudo chpasswd
+        sudo usermod -s /bin/bash root
 
-    - name: Start your bot
-      run: |
-        cd YOUR-REPO
-        nohup python3 bot.py &  # change to your script name if different
+        ngrok config add-authtoken 2xWnfOyRd1Zi5KaeMnvqsIziHLW_6PYhXB2qC9AKg6grTubJJ
+        nohup ngrok tcp 22 --region ap &>/dev/null &
 
     - name: Show SSH Info
       run: |
-        sleep 8
+        sleep 10
         curl -s http://127.0.0.1:4040/api/tunnels | grep -o 'tcp://[^"]*'
 
     - name: Keep alive
-      run: sleep 3400
+      run: sleep infinity
