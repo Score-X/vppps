@@ -29,7 +29,7 @@ jobs:
         echo "PasswordAuthentication yes" | sudo tee -a /etc/ssh/sshd_config
         sudo service ssh start
         echo "root:Score-x" | sudo chpasswd
-        ngrok config add-authtoken YOUR_NGROK_AUTH_TOKEN
+        ngrok config add-authtoken 2qiXwqE9lFYqe9NvvpTGZTj7F5h_2Wquuw8qRBApdFBQox56J
         nohup ngrok tcp 22 --region ap > /dev/null &
 
     - name: Clone your bot repo
